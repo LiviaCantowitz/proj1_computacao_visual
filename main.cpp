@@ -2,124 +2,170 @@
 #include <SDL3_image/SDL_image.h>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <cmath>
+
 using namespace std;
 
+// ================= HISTOGRAMA =================
 vector<int> computeHistogram(SDL_Surface* img) {
     vector<int> hist(256, 0);
+
     Uint32* pixels = (Uint32*)img->pixels;
     int total = img->w * img->h;
 
+    const SDL_PixelFormatDetails* fmt = SDL_GetPixelFormatDetails(img->format);
+
     for (int i = 0; i < total; i++) {
         Uint8 r, g, b;
-        SDL_GetRGB(pixels[i], img->format, &r, &g, &b);
-        hist[r]++;
+        SDL_GetRGB(pixels[i], fmt, NULL, &r, &g, &b);
+        int gray = (r + g + b) / 3;
+        hist[gray]++;
     }
 
     return hist;
 }
 
+// ================= DESENHAR HISTOGRAMA =================
 void drawHistogram(SDL_Renderer* renderer, vector<int>& hist, int width, int height) {
     int maxVal = *max_element(hist.begin(), hist.end());
-    if (maxVal == 0) maxVal = 1;
-
-    int barWidth = max(1, width / 256);
-
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    float barWidth = (float)width / 256.0f;
 
     for (int i = 0; i < 256; i++) {
-        int barHeight = (hist[i] * height) / maxVal;
+        float barHeight = ((float)hist[i] / maxVal) * height;
 
-        SDL_Rect bar = {
+        SDL_FRect bar = {
             i * barWidth,
             height - barHeight,
             barWidth,
             barHeight
         };
 
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderFillRect(renderer, &bar);
     }
 }
 
+// ================= GRAYSCALE =================
 SDL_Surface* toGray(SDL_Surface* img) {
     SDL_Surface* result = SDL_ConvertSurface(img, img->format);
 
     Uint32* pixels = (Uint32*)result->pixels;
     int total = result->w * result->h;
 
+    const SDL_PixelFormatDetails* fmt = SDL_GetPixelFormatDetails(result->format);
+
     for (int i = 0; i < total; i++) {
         Uint8 r, g, b;
-        SDL_GetRGB(pixels[i], result->format, &r, &g, &b);
+        SDL_GetRGB(pixels[i], fmt, NULL, &r, &g, &b);
 
-        Uint8 y = 0.2125*r + 0.7154*g + 0.0721*b;
-        pixels[i] = SDL_MapRGB(result->format, y, y, y);
+        Uint8 y = (r + g + b) / 3;
+        pixels[i] = SDL_MapRGB(fmt, NULL, y, y, y);
     }
 
     return result;
 }
 
+// ================= EQUALIZAÇÃO =================
 SDL_Surface* equalize(SDL_Surface* img) {
     vector<int> hist = computeHistogram(img);
-    vector<float> cdf(256, 0);
 
     int total = img->w * img->h;
+    vector<float> cdf(256, 0);
 
     cdf[0] = hist[0];
     for (int i = 1; i < 256; i++)
         cdf[i] = cdf[i - 1] + hist[i];
 
     for (int i = 0; i < 256; i++)
-        cdf[i] = (cdf[i] - cdf[0]) / (total - 1) * 255;
+        cdf[i] = cdf[i] / total;
 
     SDL_Surface* result = SDL_ConvertSurface(img, img->format);
+
     Uint32* pixels = (Uint32*)result->pixels;
+    int totalPixels = result->w * result->h;
 
-    for (int i = 0; i < total; i++) {
+    const SDL_PixelFormatDetails* fmt = SDL_GetPixelFormatDetails(result->format);
+
+    for (int i = 0; i < totalPixels; i++) {
         Uint8 r, g, b;
-        SDL_GetRGB(pixels[i], result->format, &r, &g, &b);
+        SDL_GetRGB(pixels[i], fmt, NULL, &r, &g, &b);
 
-        Uint8 newVal = (Uint8)cdf[r];
-        pixels[i] = SDL_MapRGB(result->format, newVal, newVal, newVal);
+        int gray = (r + g + b) / 3;
+        Uint8 newVal = (Uint8)(cdf[gray] * 255);
+
+        pixels[i] = SDL_MapRGB(fmt, NULL, newVal, newVal, newVal);
     }
 
     return result;
 }
 
+// ================= MAIN =================
 int main(int argc, char* argv[]) {
 
+    if (argc < 2) {
+        cout << "Uso: ./programa imagem.png\n";
+        return 1;
+    }
+
     SDL_Init(SDL_INIT_VIDEO);
-    IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG);
 
-    SDL_Surface* original = IMG_Load(argv[1]);
-    SDL_Surface* gray = toGray(original);
-    SDL_Surface* equalized = nullptr;
+    SDL_Surface* img = IMG_Load(argv[1]);
+    if (!img) {
+        cout << "Erro ao carregar imagem\n";
+        return 1;
+    }
 
-    bool isEqualized = false;
+    SDL_Surface* gray = toGray(img);
 
+    // Estatísticas
+    vector<int> hist = computeHistogram(gray);
+
+    double sum = 0;
+    int total = gray->w * gray->h;
+
+    for (int i = 0; i < 256; i++)
+        sum += i * hist[i];
+
+    double mean = sum / total;
+
+    double variance = 0;
+    for (int i = 0; i < 256; i++)
+        variance += hist[i] * pow(i - mean, 2);
+
+    variance /= total;
+    double stddev = sqrt(variance);
+
+    cout << "Media: " << mean << endl;
+    cout << "Desvio padrao: " << stddev << endl;
+
+    // ================= JANELA IMAGEM =================
     SDL_Window* window = SDL_CreateWindow("Imagem", gray->w, gray->h, 0);
-    SDL_Window* window2 = SDL_CreateWindow("Histograma", 400, 300, 0);
-
     SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
-    SDL_Renderer* renderer2 = SDL_CreateRenderer(window2, NULL);
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, gray);
 
+    // ================= JANELA HISTOGRAMA =================
+    SDL_Window* histWindow = SDL_CreateWindow("Histograma", 512, 400, 0);
+    SDL_Renderer* histRenderer = SDL_CreateRenderer(histWindow, NULL);
+
     bool running = true;
+    bool isEqualized = false;
+    SDL_Surface* equalizedImg = nullptr;
 
     while (running) {
         SDL_Event event;
 
         while (SDL_PollEvent(&event)) {
-
             if (event.type == SDL_EVENT_QUIT)
                 running = false;
 
             if (event.type == SDL_EVENT_KEY_DOWN) {
 
-                if (event.key.keysym.sym == SDLK_e) {
+                if (event.key.key == SDLK_E) {
                     if (!isEqualized) {
-                        equalized = equalize(gray);
-                        texture = SDL_CreateTextureFromSurface(renderer, equalized);
+                        equalizedImg = equalize(gray);
+                        texture = SDL_CreateTextureFromSurface(renderer, equalizedImg);
                         isEqualized = true;
                     } else {
                         texture = SDL_CreateTextureFromSurface(renderer, gray);
@@ -127,25 +173,22 @@ int main(int argc, char* argv[]) {
                     }
                 }
 
-                if (event.key.keysym.sym == SDLK_s) {
-                    IMG_SavePNG(isEqualized ? equalized : gray, "output_image.png");
+                if (event.key.key == SDLK_S) {
+                    IMG_SavePNG(isEqualized ? equalizedImg : gray, "output.png");
+                    cout << "Imagem salva!\n";
                 }
             }
         }
 
-        SDL_SetRenderDrawColor(renderer2, 0, 0, 0, 255);
-        SDL_RenderClear(renderer2);
-
-        vector<int> hist = computeHistogram(isEqualized ? equalized : gray);
-        drawHistogram(renderer2, hist, 400, 300);
-
-        SDL_RenderPresent(renderer2);
-
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        // Render imagem
         SDL_RenderClear(renderer);
-
         SDL_RenderTexture(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
+
+        // Render histograma
+        SDL_RenderClear(histRenderer);
+        drawHistogram(histRenderer, hist, 512, 400);
+        SDL_RenderPresent(histRenderer);
     }
 
     SDL_Quit();
