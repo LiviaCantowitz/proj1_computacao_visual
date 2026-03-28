@@ -102,6 +102,12 @@ SDL_Surface* equalize(SDL_Surface* img) {
 
 // ================= MAIN =================
 int main(int argc, char* argv[]) {
+    setenv("SDL_VIDEODRIVER", "dummy", 1);
+    setenv("XDG_RUNTIME_DIR", "/tmp", 1);
+if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    cout << "Erro SDL: " << SDL_GetError() << endl;
+    return 1;
+}
 
     if (argc < 2) {
         cout << "Uso: ./programa imagem.png\n";
