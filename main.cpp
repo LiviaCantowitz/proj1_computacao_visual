@@ -5,7 +5,6 @@
 #include <cmath>
 using namespace std;
 
-// ================= HISTOGRAMA =================
 vector<int> computeHistogram(SDL_Surface* img) {
     vector<int> hist(256, 0);
     Uint32* pixels = (Uint32*)img->pixels;
@@ -42,7 +41,6 @@ void drawHistogram(SDL_Renderer* renderer, vector<int>& hist, int width, int hei
     }
 }
 
-// ================= CONVERSÃO =================
 SDL_Surface* toGray(SDL_Surface* img) {
     SDL_Surface* result = SDL_ConvertSurface(img, img->format);
 
@@ -60,7 +58,6 @@ SDL_Surface* toGray(SDL_Surface* img) {
     return result;
 }
 
-// ================= EQUALIZAÇÃO =================
 SDL_Surface* equalize(SDL_Surface* img) {
     vector<int> hist = computeHistogram(img);
     vector<float> cdf(256, 0);
@@ -88,7 +85,6 @@ SDL_Surface* equalize(SDL_Surface* img) {
     return result;
 }
 
-// ================= MAIN =================
 int main(int argc, char* argv[]) {
 
     SDL_Init(SDL_INIT_VIDEO);
@@ -137,7 +133,6 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // HISTOGRAMA
         SDL_SetRenderDrawColor(renderer2, 0, 0, 0, 255);
         SDL_RenderClear(renderer2);
 
@@ -146,7 +141,6 @@ int main(int argc, char* argv[]) {
 
         SDL_RenderPresent(renderer2);
 
-        // IMAGEM
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
