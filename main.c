@@ -1,5 +1,5 @@
 /* ---- Projeto 1 - Computação Visual ---- */
-/* ---- Alunos: Alexandre  RA:
+/* ---- Alunos: Alexandre Ribeiro de Souza  RA: 10417845
                 Livia Negrucci Cantowitz RA:10389419 ---- */
 
 #include <SDL3/SDL.h>
