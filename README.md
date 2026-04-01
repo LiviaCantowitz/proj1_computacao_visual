@@ -3,12 +3,12 @@
 
 ## Descrição do Projeto
 
-Este projeto implementa um software de processamento de imagens em **linguagem C**, utilizando a biblioteca **SDL3** (Simple DirectMedia Layer). O programa é capaz de carregar imagens em formatos comuns (PNG, JPG, BMP), convertê-las para escala de cinza, analisar seu histograma e aplicar técnicas de equalização para melhorar o contraste.
+Este projeto implementa um software de processamento de imagens em **linguagem C**, utilizando a biblioteca **SDL3**. O programa é capaz de carregar imagens em formatos comuns (PNG, JPG, BMP), convertê-las para escala de cinza, analisar seu histograma e aplicar técnicas de equalização para melhorar o contraste.
 
 **Disciplina:** Computação Visual  
 **Professor:** André Kishimoto  
 **Instituição:** Universidade Presbiteriana Mackenzie  
-**Período:** 2026
+
 
 ---
 
@@ -162,23 +162,23 @@ typedef struct {
 
 O programa implementa verificações robustas:
 
-- ✅ Validação de argumentos da linha de comando
-- ✅ Tratamento de arquivo não encontrado
-- ✅ Validação de formato de imagem
-- ✅ Gerenciamento seguro de memória
-- ✅ Fallback para fontes do sistema (se assets/font.ttf não existir)
-- ✅ Tratamento de erros de SDL e SDL_image
+- Validação de argumentos da linha de comando
+- Tratamento de arquivo não encontrado
+- Validação de formato de imagem
+- Gerenciamento seguro de memória
+- Fallback para fontes do sistema (se assets/font.ttf não existir)
+- Tratamento de erros de SDL e SDL_image
 
 ---
 
 
-## 🔗 Repositório
+## Repositório
 
 Este projeto está disponível em: https://github.com/LiviaCantowitz/proj1_computacao_visual
 
 ---
 
-## 📚 Referências e Fontes
+## Referências e Fontes
 
 - **SDL3 Documentation**: https://wiki.libsdl.org/SDL3/
 - **SDL_image**: https://github.com/libsdl-org/SDL_image
@@ -189,7 +189,7 @@ Este projeto está disponível em: https://github.com/LiviaCantowitz/proj1_compu
 
 ---
 
-## 📄 Licença
+## Licença
 
 Este projeto foi desenvolvido como atividade acadêmica da disciplina Computação Visual na Universidade Presbiteriana Mackenzie.
 
